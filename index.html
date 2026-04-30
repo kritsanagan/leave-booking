@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -150,19 +151,14 @@
     <div id="alert-area"></div>
     <div class="card">
       <div class="card-title">✍️ แบบฟอร์มขอลา</div>
+      <div class="form-group"><label>👤 ชื่อผู้ขอลา</label><input type="text" id="req-name" placeholder="กรอกชื่อ-นามสกุล"></div>
       <div class="form-group">
         <label>🏢 ชุดที่</label>
-        <select id="req-unit" onchange="updateNameDropdown(this.value)">
+        <select id="req-unit">
           <option value="">-- เลือกชุด --</option>
           <option value="1">ชุดที่ 1</option>
           <option value="2">ชุดที่ 2</option>
           <option value="3">ธุรการจราจร</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>👤 ชื่อผู้ขอลา</label>
-        <select id="req-name-select">
-          <option value="">-- เลือกชุดก่อน --</option>
         </select>
       </div>
       <div class="form-group">
@@ -227,7 +223,6 @@
     <div class="search-box">
       <input type="text" id="history-search" placeholder="🔍 ค้นหาชื่อ..." oninput="renderHistory()">
     </div>
-    <div id="history-ranking" style="margin-bottom:12px;"></div>
     <div id="history-stat-bar"></div>
     <div id="history-container"></div>
   </div>
@@ -367,7 +362,7 @@ function filterByMonth(data,selId){
 }
 
 function submitLeave(){
-  const name=document.getElementById('req-name-select').value.trim();
+  const name=document.getElementById('req-name').value.trim();
   const unit=document.getElementById('req-unit').value;
   const start=document.getElementById('req-start').value;
   const end=document.getElementById('req-end').value;
@@ -380,7 +375,7 @@ function submitLeave(){
     .then(res=>{
       if(res.success){
         aa.innerHTML='<div class="alert alert-success">✅ ลงทะเบียนวันลาสำเร็จ!</div>';
-        document.getElementById('req-name-select').value='';document.getElementById('req-unit').value='';updateNameDropdown('');
+        document.getElementById('req-name').value='';document.getElementById('req-unit').value='';
         document.getElementById('req-start').value='';document.getElementById('req-end').value='';
         showToast('✅ ลงทะเบียนสำเร็จ!');setTimeout(()=>aa.innerHTML='',3000);
       }else{aa.innerHTML='<div class="alert alert-danger">🚫 '+res.message+'</div>';}
@@ -579,46 +574,10 @@ function renderHistory(){
   const search=(document.getElementById('history-search').value||'').trim().toLowerCase();
   const selMonth=document.getElementById('history-month').value;
 
-  // ดึงข้อมูลวันลาที่ผ่านมาแล้วทั้งหมด (ก่อน filter) เพื่อคำนวณ ranking
-  const allPast=leaveData.filter(l=>
+  let data=leaveData.filter(l=>
     (l.status||'active')!=='cancelled'&&l.end&&
     new Date(l.end+'T00:00:00')<today
   );
-
-  // คำนวณ ranking วันสะสมต่อคน (ไม่ filter ชุด/เดือน/ชื่อ)
-  const rankMap={};
-  allPast.forEach(l=>{
-    const d=l.totalDays||dateDiff(l.start,l.end);
-    rankMap[l.name]=(rankMap[l.name]||0)+d;
-  });
-  const rankArr=Object.entries(rankMap)
-    .sort((a,b)=>b[1]-a[1])
-    .slice(0,3);
-
-  // แสดง ranking
-  const rankEl=document.getElementById('history-ranking');
-  if(rankEl){
-    if(rankArr.length){
-      const medals=['🥇','🥈','🥉'];
-      const colors=['#f59e0b','#94a3b8','#b45309'];
-      const bgColors=['#fffbeb','#f8fafc','#fef3c7'];
-      rankEl.innerHTML=
-        '<div style="font-size:0.82rem;font-weight:700;color:var(--text-light);margin-bottom:8px;letter-spacing:0.05em;">🏆 สะสมวันลามากสุด</div>'+
-        rankArr.map((r,i)=>
-          '<div style="display:flex;align-items:center;gap:10px;background:'+bgColors[i]+';border-radius:10px;padding:10px 14px;margin-bottom:6px;border:1px solid #e2e8f0;">'+
-            '<span style="font-size:1.6rem;line-height:1;">'+medals[i]+'</span>'+
-            '<div style="flex:1;">'+
-              '<div style="font-weight:700;font-size:0.95rem;">'+r[0]+'</div>'+
-            '</div>'+
-            '<div style="font-family:'Prompt',sans-serif;font-size:1.3rem;font-weight:700;color:'+colors[i]+';white-space:nowrap;">'+r[1]+' <span style="font-size:0.75rem;font-weight:400;color:var(--text-light);">วัน</span></div>'+
-          '</div>'
-        ).join('');
-    } else {
-      rankEl.innerHTML='';
-    }
-  }
-
-  let data=allPast.slice();
   if(historyFilter!=='all')data=data.filter(l=>l.unit===historyFilter);
   if(selMonth!=='all')data=data.filter(l=>l.end.slice(0,7)===selMonth);
   if(search)data=data.filter(l=>l.name.toLowerCase().includes(search));
@@ -690,61 +649,6 @@ function installPWA(){
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(r=>{if(r.outcome==='accepted')showToast('✅ กำลังติดตั้ง...');deferredPrompt=null;});
   } else { showToast('iOS: แตะ Share → Add to Home Screen'); }
-}
-
-
-// =================== MEMBERS ===================
-// แก้ไขรายชื่อสมาชิกได้ตรงนี้เลยครับ
-const MEMBERS = {
-  '1': [
-    'ร.ต.ท.ทันดร แผลงเดช',
-    'ร.ต.ท.ฤาชัย ทับทิมไสย',
-    'ร.ต.ต.ณรงค์ พรมพากล',
-    'ร.ต.ต.วิโรจน์ จำมี',
-    'จ.ส.ต.ศรัณกรย์ ศุภณัฐมงคลกิจ',
-    'ส.ต.ท.ณัฏฐ์ คุณสนอง',
-    'ส.ต.ท.ชาญวิทย์ เศรษฐจำนง',
-    'ส.ต.ท.เอกพล ทีหัวช้าง',
-    'ส.ต.ท.วิศวะ อินฉ่ำ',
-    'ส.ต.ท.พิชิตพล แซ่ลิ้ม',
-    'ส.ต.ท.ปภาวิน ง้าวแหลม',
-    'ส.ต.ท.วรวิทย์ ประดับเสริฐ',
-    'ส.ต.ท.วัฒนา ประจันทร์ศรี',
-  ],
-  '2': [
-    'ร.ต.ท.มนตรี เสือสมิง',
-    'ร.ต.ต.พรอดุลย์ สวัสดิ์เดช',
-    'ร.ต.ต.ชิษณุพงศ์ จั้นชัยภูมิ',
-    'ร.ต.ต.พุฒิพงศ์ สิทธิประเสริฐ',
-    'จ.ส.ต.ภราดร ปะระทัง',
-    'จ.ส.ต.รชานนท์ ใจใหญ่',
-    'จ.ส.ต.ยุทธนา สุระมนต์',
-    'ส.ต.อ.อธิยุต ใสสะอาด',
-    'ส.ต.ท.ณัฐภาส เสือสมิง',
-    'ส.ต.ท.นิติกร เอกพันธ์',
-    'ส.ต.ท.เกียรติยศ แสงโทโพ',
-    'ส.ต.ท.เดชฤทธ์ ชมาฤกษ์',
-  ],
-  '3': [
-    'ร.ต.ต.พีระกานต์ แก้วเกตุ',
-    'ด.ต.ณภัทร ท่าพิมาย',
-    'จ.ส.ต.สัณชัย เจริญสุข',
-    'จ.ส.ต.ธนากร เจริญเขต',
-    'ส.ต.อ.ชานน สุทาวัน',
-    'ส.ต.ท.กันต์กวี สุกใส',
-  ]
-};
-
-// สร้าง dropdown ชื่อตามชุดที่เลือก
-function updateNameDropdown(unit) {
-  const sel = document.getElementById('req-name-select');
-  sel.innerHTML = '<option value="">-- เลือกชื่อ --</option>';
-  if (!unit || !MEMBERS[unit]) return;
-  MEMBERS[unit].forEach(name => {
-    const o = document.createElement('option');
-    o.value = name; o.textContent = name;
-    sel.appendChild(o);
-  });
 }
 
 // =================== INIT ===================

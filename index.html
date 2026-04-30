@@ -286,9 +286,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ⚙️ แก้ URL ให้ตรงกับ Cloudflare Worker ของคุณ
-const WORKER_URL = 'https://leave-api.kritsanagan.workers.dev';
-
 let leaveData     = [];
 let currentFilter = 'all';
 let cancelFilter  = 'all';
@@ -312,12 +309,17 @@ function getMonthLabel(ym){
   return mn[parseInt(m)]+' '+(parseInt(y)+543);
 }
 
+// ⚙️ แก้ URL ให้ตรงกับ Cloudflare Worker ของคุณ
+const WORKER_URL = 'https://leave-api.kritsanagan.workers.dev';
+
 function api(payload){
-  return new Promise((resolve,reject)=>{
-    google.script.run
-      .withSuccessHandler(d=>resolve(typeof d==='string'?JSON.parse(d):d))
-      .withFailureHandler(reject)
-      .handleRequest(payload);
+  return fetch(WORKER_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(r => {
+    if (!r.ok) throw new Error('Server error: ' + r.status);
+    return r.json();
   });
 }
 
